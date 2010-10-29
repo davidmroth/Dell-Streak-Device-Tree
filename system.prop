@@ -1,0 +1,46 @@
+#
+# system.prop for surf
+#
+
+rild.libpath=/system/lib/libril-qc-1.so
+rild.libargs=-d /dev/smd0
+persist.rild.nitz_plmn=
+persist.rild.nitz_long_ons_0=
+persist.rild.nitz_long_ons_1=
+persist.rild.nitz_long_ons_2=
+persist.rild.nitz_long_ons_3=
+persist.rild.nitz_short_ons_0=
+persist.rild.nitz_short_ons_1=
+persist.rild.nitz_short_ons_2=
+persist.rild.nitz_short_ons_3=
+DEVICE_PROVISIONED=1
+#persist.maxcpukhz=768400
+debug.sf.hw=1
+dalvik.vm.heapsize=48m
+ro.sf.lcd_density=160
+#dalvik.vm.dexopt-flags=m=y
+#dalvik.vm.execution-mode=int:jit
+  
+#
+# system props for the data modules
+#
+#ro.use_data_netmgrd=false
+#ro.ril.hsxpa=2
+#ro.ril.hsdpa.category=8
+#ro.ril hsupa.category=5
+#ro.ril.hep=1
+#ro.ril.enable.dtm=1
+#ro.ril.enable.3g.prefix=1
+#ro.ril.gprsclass=32
+
+#
+# system prop for opengles version 2
+#
+
+ro.url.legal=http://www.google.com/intl/%s/mobile/android/basic/phone-legal.html
+ro.url.legal.android_privacy=http://www.google.com/intl/%s/mobile/android/basic/privacy.html
+ro.opengles.version=131072
+keyguard.no_require_sim=true
+ro.setupwizard.mode=OPTIONAL
+ro.com.google.locationfeatures=1
+ro.com.google.networklocation=1

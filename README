@@ -1,0 +1,34 @@
+WARNING: NOT FOR BEGINNERS!!!!
+
+
+About:
+This is the vendor/device tree for the Dell Streak. This can be built using Code Aurora's Froyo Source (2.2.1 FRG83). This project is at a very early alpha stage and there are still a lot of issues to resolve. See list below.
+
+Goal:
+The goal of this project is to provide a stock Google Experience with as little deviation as possible from the original Android Source. Eventually, switching to Google's source tree would be preferred.
+
+Get the source:
+Code Aurora Git Web: https://www.codeaurora.org/gitweb/quic/la/
+Download Froyo Source from Code Aurora using Google's Repo Command: repo init -u git://codeaurora.org/platform/manifest.git -b froyo
+
+Compile:
+Copy this directory to the root of the build environment: device/dell/streak/
+At the top level, issue the command: make or copy compile_streak to the root of the build environment and run.
+
+
+
+
+TODO/ISSUES:
+Fix: Lockup on boot
+Fix: Screen orientation (Streaks screen appears to be physically mounted upside down)
+Fix: Camera
+Fix: Sensor rotation
+Fix: Data size (116MB vs 1.5GB)
+Fix: Slow 3D/Screen response
+Fix: Camera Button - Acts like menu button
+Fix: Wi-Fi/Bluetooth
+
+
+Add: Google Apps
+
+
