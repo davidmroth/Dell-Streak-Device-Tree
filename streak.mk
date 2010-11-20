@@ -23,6 +23,7 @@ PRODUCT_PACKAGES := \
     DeskClock \
     AlarmProvider \
     Bluetooth \
+    Browser \
     Calculator \
     Calendar \
     Camera \

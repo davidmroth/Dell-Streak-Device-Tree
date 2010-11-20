@@ -75,6 +75,7 @@ else
 
 endif # ENABLE_SERIAL_CONSOLE
 
+RECOVERY_BOARD_KERNEL_CMDLINE := console=ttyDCC0 androidboot.hardware=qcom 
 BOARD_EGL_CFG := device/$(PRODUCT_BRAND)/$(TARGET_PRODUCT)/egl.cfg
 
 #~ # cat /proc/mtd

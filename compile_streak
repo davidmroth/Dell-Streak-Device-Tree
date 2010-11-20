@@ -1,0 +1,47 @@
+#!/bin/sh
+if [ -e build/envsetup.sh ]; then
+	clear; . build/envsetup.sh; lunch streak-userdebug
+else
+	clear; echo "Please run this from the root of the Android Build Enviroment"
+fi
+
+reset
+
+export KERNEL_CONFIG=qsd8650-perf_defconfig
+#export KERNEL_CONFIG=streak_defconfig
+export PATH=/opt/jdk1.5.0_22/bin:/bin:/sbin:/usr/bin:/usr/sbin:$HOME/bin:$ANDROID_TOOLCHAIN:$ANDROID_BUILD_TOP/out/host/linux-x86/bin
+export JAVA_HOME=/opt/jdk1.5.0_22/ 
+export ANDROID_JAVA_HOME=$JAVA_HOME 
+export USER=mistadman
+export PRODUCT_DEFAULT_REGION=US
+
+case $1 in
+
+	"nobuild")
+		;;
+	"build")
+   		[ ! -e out/ ] && ( make acp; mmm device/qcom/qsd8250_surf/custom/prebuilt )
+		 #make -j4 QC_PROP=true ENABLE_SERIAL_CONSOLE=true
+		 #make -j4 QC_PROP=true ENABLE_SERIAL_CONSOLE=true BUILD_TINY_ANDROID=true
+		#make -j4 QC_PROP=true ENABLE_SERIAL_CONSOLE=true TARGET_PREBUILT_KERNEL=device/dell/streak/custom/boot/kernel
+		make -j4 ENABLE_SERIAL_CONSOLE=true
+		;;
+	"kernelmenu")
+   		[ -e kernel/ ] && ( cd kernel/; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- $KERNEL_CONFIG oldconfig; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- menuconfig)
+		;;		
+
+	"kernelprepare")
+   		[ -e kernel/ ] && ( cd kernel/; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- $KERNEL_CONFIG oldconfig)
+		;;		
+
+	"kernelbuild")
+   		[ -e kernel/ ] && ( cd kernel/; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- )
+		;;
+		
+	"recoverybuild")
+		make -j4 recoveryimage TARGET_PREBUILT_KERNEL=device/dell/streak/custom/recovery/prebuilt/kernel
+		;;
+	*)
+		echo "nobuild build kernelmenu kernelprepare kernelbuild recoverybuild"
+		;;
+esac

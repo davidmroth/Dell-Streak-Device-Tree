@@ -29,7 +29,7 @@ char* MENU_ITEMS[] = { "reboot system now",
                        "apply sdcard:update.zip",
                        "wipe data/factory reset",
                        "wipe cache partition",
-                       "advance",
+                       "advanced",
                        NULL };
 
 int device_toggle_display(volatile char* key_pressed, int key_code) {
