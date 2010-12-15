@@ -1,0 +1,167 @@
+
+project bionic/
+diff --git a/linker/Android.mk b/linker/Android.mk
+index 0cc7992..e731fe1 100644
+--- a/linker/Android.mk
++++ b/linker/Android.mk
+@@ -39,7 +39,7 @@ LOCAL_CFLAGS += -DLINKER_AREA_SIZE=$(LINKER_AREA_SIZE)
+ 
+ # Set LINKER_DEBUG to either 1 or 0
+ #
+-LOCAL_CFLAGS += -DLINKER_DEBUG=0
++LOCAL_CFLAGS += -DLINKER_DEBUG=1
+ 
+ # we need to access the Bionic private header <bionic_tls.h>
+ # in the linker; duplicate the HAVE_ARM_TLS_REGISTER definition
+
+project build/
+diff --git a/core/Makefile b/core/Makefile
+index 1160150..f6b724c 100755
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -554,16 +554,23 @@ ifeq (,$(filter true, $(TARGET_NO_KERNEL) $(TARGET_NO_RECOVERY) $(BUILD_TINY_AND
+ 
+ INSTALLED_RECOVERYIMAGE_TARGET := $(PRODUCT_OUT)/recovery.img
+ 
+-recovery_initrc := $(call include-path-for, recovery)/etc/init.rc
+ recovery_kernel := $(INSTALLED_KERNEL_TARGET) # same as a non-recovery system
++#recovery_kernel := device/dell/streak/custom/recovery/prebuilt/kernel # custom recovery system
+ recovery_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.img
+ recovery_build_prop := $(INSTALLED_BUILD_PROP_TARGET)
+-recovery_binary := $(call intermediates-dir-for,EXECUTABLES,recovery)/recovery
++
++#Modified recovery files
++recovery_initrc := $(call intermediates-dir-for,EXECUTABLES, init.rc-recovery)/init.rc
++recovery_binary := $(call intermediates-dir-for,EXECUTABLES, recovery-$(TARGET_PRODUCT))/recovery
++recovery_adbd_binary := $(call intermediates-dir-for,EXECUTABLES, adbd_recovery)/adbd
++recovery_nandroid_shellscript := $(call intermediates-dir-for,EXECUTABLES, nandroid-md5.sh)/nandroid-md5.sh
++recovery_fix_permissions_shellscript := $(call intermediates-dir-for,EXECUTABLES, fix_permissions)/fix_permissions
++
+ mke2fs_binary := $(call intermediates-dir-for,EXECUTABLES,mke2fs_static)/mke2fs_static
+ e2fsck_binary := $(call intermediates-dir-for,EXECUTABLES,e2fsck_static)/e2fsck_static
+ tune2fs_binary := $(call intermediates-dir-for,EXECUTABLES,tune2fs_static)/tune2fs_static
+ recovery_resources_common := $(call include-path-for, recovery)/res
+-recovery_resources_private := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery/res))
++recovery_resources_private := $(strip $(wildcard $(TARGET_DEVICE_DIR)/custom/recovery/res))
+ recovery_resource_deps := $(shell find $(recovery_resources_common) \
+   $(recovery_resources_private) -type f)
+ 
+@@ -583,7 +590,7 @@ endif
+ 
+ # Assumes this has already been stripped
+ ifdef BOARD_KERNEL_CMDLINE
+-  INTERNAL_RECOVERYIMAGE_ARGS += --cmdline "$(BOARD_KERNEL_CMDLINE)"
++  INTERNAL_RECOVERYIMAGE_ARGS += --cmdline "$(RECOVERY_BOARD_KERNEL_CMDLINE)"
+ endif
+ ifdef BOARD_KERNEL_BASE
+   INTERNAL_RECOVERYIMAGE_ARGS += --base $(BOARD_KERNEL_BASE)
+@@ -606,10 +613,16 @@ $(RECOVERY_INSTALL_OTA_KEYS): $(OTA_PUBLIC_KEYS) $(DUMPKEY_JAR)
+ 	@mkdir -p $(dir $@)
+ 	java -jar $(DUMPKEY_JAR) $(PRIVATE_OTA_PUBLIC_KEYS) > $@
+ 
++
++#Recovery Symlinks
++RECOVERY_SYMLINKS := $(addprefix $(TARGET_RECOVERY_ROOT_OUT)/sbin/,$(filter-out $(exclude),$(notdir $(RECOVERY_LINKS))))
++BUSYBOX_SYMLINKS := $(addprefix $(TARGET_RECOVERY_ROOT_OUT)/sbin/,$(filter-out $(exclude),$(notdir $(BUSYBOX_LINKS))))
++
+ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
+ 		$(INSTALLED_RAMDISK_TARGET) \
+ 		$(INSTALLED_BOOTIMAGE_TARGET) \
+ 		$(recovery_binary) \
++		$(recovery_adbd_binary) $(recovery_nandroid_shellscript) $(recovery_fix_permissions_shellscript) \
+ 		$(mke2fs_binary) \
+ 		$(e2fsck_binary) \
+ 		$(tune2fs_binary) \
+@@ -628,14 +641,20 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
+ 	echo Modifying ramdisk contents...
+ 	cp -f $(recovery_initrc) $(TARGET_RECOVERY_ROOT_OUT)/
+ 	cp -f $(recovery_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
++	cp -f $(recovery_adbd_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
++	cp -f $(recovery_nandroid_shellscript) $(TARGET_RECOVERY_ROOT_OUT)/sbin
++	cp -f $(recovery_fix_permissions_shellscript) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+ 	cp -f $(mke2fs_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+ 	cp -f $(e2fsck_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+ 	cp -f $(tune2fs_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
++	@echo Creating recovery symlinks ...
++	$(hide) for x in $(RECOVERY_SYMLINKS); do ln -sf recovery $$x; done;
++	$(hide) for x in $(BUSYBOX_SYMLINKS); do ln -sf busybox $$x; done;
+ 	cp -rf $(recovery_resources_common) $(TARGET_RECOVERY_ROOT_OUT)/
+ 	$(foreach item,$(recovery_resources_private), \
+ 	  cp -rf $(item) $(TARGET_RECOVERY_ROOT_OUT)/)
+ 	cp $(RECOVERY_INSTALL_OTA_KEYS) $(TARGET_RECOVERY_ROOT_OUT)/res/keys
+-	cat $(INSTALLED_DEFAULT_PROP_TARGET) $(recovery_build_prop) \
++	cat $(call intermediates-dir-for,EXECUTABLES, recovery.prop)/recovery.prop $(recovery_build_prop) \
+ 	        > $(TARGET_RECOVERY_ROOT_OUT)/default.prop
+ 	$(MKBOOTFS) $(TARGET_RECOVERY_ROOT_OUT) | $(MINIGZIP) > $(recovery_ramdisk)
+ 	$(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --output $@
+
+project frameworks/policies/base/
+diff --git a/phone/com/android/internal/policy/impl/PhoneWindowManager.java b/phone/com/android/internal/policy/impl/PhoneWindowManager.java
+index bed2122..f7dda3b 100755
+--- a/phone/com/android/internal/policy/impl/PhoneWindowManager.java
++++ b/phone/com/android/internal/policy/impl/PhoneWindowManager.java
+@@ -214,7 +214,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     boolean mScreenOn = false;
+     boolean mOrientationSensorEnabled = false;
+     int mCurrentAppOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+-    static final int DEFAULT_ACCELEROMETER_ROTATION = 0;
++    //static final int DEFAULT_ACCELEROMETER_ROTATION = 0;
++    static final int DEFAULT_ACCELEROMETER_ROTATION = 270;
+     int mAccelerometerDefault = DEFAULT_ACCELEROMETER_ROTATION;
+     boolean mHasSoftInput = false;
+     
+@@ -2140,11 +2141,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             Display d = ((WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE))
+                     .getDefaultDisplay();
+             if (d.getWidth() > d.getHeight()) {
+-                mPortraitRotation = Surface.ROTATION_90;
+-                mLandscapeRotation = Surface.ROTATION_0;
++                //mPortraitRotation = Surface.ROTATION_90;
++                //mLandscapeRotation = Surface.ROTATION_0;
++                mPortraitRotation = Surface.ROTATION_180;
++                mLandscapeRotation = Surface.ROTATION_270;
+             } else {
+-                mPortraitRotation = Surface.ROTATION_0;
+-                mLandscapeRotation = Surface.ROTATION_90;
++                //mPortraitRotation = Surface.ROTATION_0;
++                //mLandscapeRotation = Surface.ROTATION_90;
++                mPortraitRotation = Surface.ROTATION_270;
++                mLandscapeRotation = Surface.ROTATION_180;
+             }
+         }
+ 
+@@ -2172,7 +2177,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     int curRotation = mOrientationListener.getCurrentRotation();
+                     return curRotation >= 0 ? curRotation : lastRotation;
+                 }
+-                return Surface.ROTATION_0;
++                //return Surface.ROTATION_0;
++                return Surface.ROTATION_270;
+             }
+         }
+     }
+@@ -2273,7 +2279,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+ 
+     void updateRotation(int animFlags) {
+         mPowerManager.setKeyboardVisibility(mLidOpen);
+-        int rotation = Surface.ROTATION_0;
++        //int rotation = Surface.ROTATION_0;
++        int rotation = Surface.ROTATION_270;
+         if (mLidOpen) {
+             rotation = mLidOpenRotation;
+         } else if (mDockMode == Intent.EXTRA_DOCK_STATE_CAR && mCarDockRotation >= 0) {
+
+project hardware/msm7k/
+diff --git a/libaudio-qsd8k/Android.mk b/libaudio-qsd8k/Android.mk
+index c97cd3f..f415341 100644
+--- a/libaudio-qsd8k/Android.mk
++++ b/libaudio-qsd8k/Android.mk
+@@ -51,6 +51,8 @@ ifeq ($(BOARD_HAVE_BLUETOOTH),true)
+   LOCAL_SHARED_LIBRARIES += liba2dp libbinder
+ endif
+ 
++LOCAL_PRELINK_MODULE := false
++
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ endif # not BUILD_TINY_ANDROID
