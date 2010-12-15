@@ -7,8 +7,12 @@ fi
 
 reset
 
-export KERNEL_CONFIG=qsd8650-perf_defconfig
+#export KERNEL_CONFIG=qsd8650-perf_defconfig
 #export KERNEL_CONFIG=streak_defconfig
+
+#export KERNEL_CONFIG=streak_oc_defconfig
+export KERNEL_SAVE=$([ ! -e man_kern ] && (mkdir man_kern; echo man_kern) || echo man_kern)
+export KERN_SAVE=man_kern
 export PATH=/opt/jdk1.5.0_22/bin:/bin:/sbin:/usr/bin:/usr/sbin:$HOME/bin:$ANDROID_TOOLCHAIN:$ANDROID_BUILD_TOP/out/host/linux-x86/bin
 export JAVA_HOME=/opt/jdk1.5.0_22/ 
 export ANDROID_JAVA_HOME=$JAVA_HOME 
@@ -26,22 +30,26 @@ case $1 in
 		#make -j4 QC_PROP=true ENABLE_SERIAL_CONSOLE=true TARGET_PREBUILT_KERNEL=device/dell/streak/custom/boot/kernel
 		make -j4 ENABLE_SERIAL_CONSOLE=true
 		;;
-	"kernelmenu")
-   		[ -e kernel/ ] && ( cd kernel/; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- $KERNEL_CONFIG oldconfig; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- menuconfig)
+	"kernelclean")
+   		[ -e kernel/ ] && make -C kernel O=../$KERN_SAVE ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- $KERNEL_CONFIG distclean
 		;;		
 
 	"kernelprepare")
-   		[ -e kernel/ ] && ( cd kernel/; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- $KERNEL_CONFIG oldconfig)
+   		[ -e kernel/ ] && make -C kernel O=../$KERN_SAVE ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- $KERNEL_CONFIG oldconfig
+		;;		
+
+	"kernelmenu")
+   		[ -e $KERN_SAVE/.config ] && make -C kernel O=../$KERN_SAVE ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- menuconfig || echo "Please run \"./compile_streak kernelprepare\" first!"; 
 		;;		
 
 	"kernelbuild")
-   		[ -e kernel/ ] && ( cd kernel/; make ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi- )
+   		[ -e kernel/ ] && make -C kernel O=../$KERN_SAVE ARCH=arm CROSS_COMPILE=$ANDROID_TOOLCHAIN/arm-eabi-
 		;;
 		
 	"recoverybuild")
 		make -j4 recoveryimage TARGET_PREBUILT_KERNEL=device/dell/streak/custom/recovery/prebuilt/kernel
 		;;
 	*)
-		echo "nobuild build kernelmenu kernelprepare kernelbuild recoverybuild"
+		echo "nobuild build recoverybuild kernelprepare kernelmenu kernelbuild"
 		;;
 esac

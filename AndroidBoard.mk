@@ -44,7 +44,7 @@ endif
 ifeq ($(TARGET_PREBUILT_KERNEL),)
     ifeq ($(TARGET_KERNEL_CONFIG),)
        ifeq ($(KERNEL_DEFCONFIG),)
-           KERNEL_DEFCONFIG := qsd8650-perf_defconfig
+           KERNEL_DEFCONFIG := streak_oc_defconfig
        endif
        include kernel/AndroidKernel.mk
     endif # TARGET_KERNEL_CONFIG

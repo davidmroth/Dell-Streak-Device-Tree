@@ -2,7 +2,7 @@
 
 PATH=$PATH:/home/david/Working/Android/Dell_Build/2.2_qcom_almond_new/out/host/linux-x86/bin/
 FLASHED="false"
-fastboot=$HOME/bin/android-sdk-linux_86/tools/fastboot
+fastboot=fastboot
 
 
 case $1 in

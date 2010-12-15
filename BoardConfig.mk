@@ -69,7 +69,6 @@ BOARD_NAND_PAGE_SIZE := 2048
 
 ifeq ($(ENABLE_SERIAL_CONSOLE),true)
     BOARD_KERNEL_CMDLINE := console=ttyMSM2,115200n8 console=ttyDCC0 androidboot.hardware=qcom
-    #BOARD_KERNEL_CMDLINE := console=tty androidboot.hardware=qcom
 else
     BOARD_KERNEL_CMDLINE := console=ttyDCC0 androidboot.hardware=qcom
 
