@@ -315,6 +315,13 @@ static int process_directory(int parent, const char *path, int fixstats, mkyaffs
 	struct dirent *entry;
 
 	//nDirectories++;
+
+	/* Skip this directory if it contains "lost+found".
+	 * This enables a yaffs2 image to be built when there
+	 * is absolute rubbish inodes in lost+found. - wkt.
+	 */
+	if (strstr(path, "lost+found") != NULL)
+        	return(0);
 	
 	dir = opendir(path);
 	
