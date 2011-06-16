@@ -46,7 +46,7 @@ ifeq ($(TARGET_PREBUILT_KERNEL),)
        ifeq ($(KERNEL_DEFCONFIG),)
            KERNEL_DEFCONFIG := streak_oc_defconfig
        endif
-       include kernel/AndroidKernel.mk
+       #include kernel/AndroidKernel.mk
     endif # TARGET_KERNEL_CONFIG
 endif # TARGET_PREBUILT_KERNEL
 
